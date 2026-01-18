@@ -1,0 +1,84 @@
+# Build artifacts
+imgui-client/build/
+imgui-client/vcpkg/
+imgui-client/vcpkg_installed/
+*.exe
+*.dll
+*.pdb
+*.ilk
+*.obj
+*.o
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+venv/
+env/
+.venv/
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Config (contains API keys)
+config.json
+mcp_client_config.json
+./claude
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# IDA specific
+*.i64
+*.idb
+*.id0
+*.id1
+*.id2
+*.nam
+*.til
+
+# Generated documentation
+site/
+docs/_build/
+
+# Keep screenshots for README
+!docs/images/*.png
+!docs/images/*.jpg
+!docs/images/*.gif

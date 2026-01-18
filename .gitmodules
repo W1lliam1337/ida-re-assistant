@@ -1,0 +1,6 @@
+[submodule "imgui-client/libs/imgui"]
+	path = imgui-client/libs/imgui
+	url = https://github.com/ocornut/imgui.git
+[submodule "imgui-client/libs/cpp-httplib"]
+	path = imgui-client/libs/cpp-httplib
+	url = https://github.com/yhirose/cpp-httplib.git

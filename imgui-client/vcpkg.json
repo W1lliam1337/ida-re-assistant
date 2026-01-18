@@ -1,0 +1,9 @@
+{
+    "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+    "name": "ida-re-assistant",
+    "version": "1.0.0",
+    "dependencies": [
+        "openssl",
+        "nlohmann-json"
+    ]
+}

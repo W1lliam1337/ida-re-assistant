@@ -1,0 +1,102 @@
+{
+  "_comment": "Example MCP client configuration for IDA RE Assistant",
+  "_description": "This file shows all available transport options. Choose the one that matches your MCP client.",
+
+  "stdio_transport": {
+    "description": "For Claude Desktop and other stdio-based MCP clients",
+    "usage": "Add this to your MCP client's configuration file",
+    "command": "python",
+    "args": [
+      "C:\\path\\to\\ida-re-assistant\\mcp-server\\ida_bridge.py"
+    ],
+    "notes": [
+      "Replace path with actual installation directory",
+      "For Claude Desktop: See install_mcp.bat option 1",
+      "This connects via stdin/stdout to the MCP server"
+    ]
+  },
+
+  "sse_transport": {
+    "description": "For ChatGPT, Gemini, and HTTP-based MCP clients",
+    "usage": "Point your MCP client to this URL",
+    "url": "http://127.0.0.1:13121/sse",
+    "start_server": "python C:\\path\\to\\ida-re-assistant\\mcp-server\\ida_sse_server.py",
+    "notes": [
+      "Start the SSE server first: setup.bat -> option 4",
+      "Or run: install_mcp.bat -> option 2 for instructions",
+      "This connects via Server-Sent Events (HTTP streaming)"
+    ]
+  },
+
+  "ida_http_server": {
+    "description": "IDA Pro HTTP server (started from IDA plugin)",
+    "url": "http://127.0.0.1:13120",
+    "start_method": "Press Ctrl+Shift+M in IDA Pro",
+    "notes": [
+      "This is the actual IDA instance the MCP servers connect to",
+      "Must be running for any MCP mode to work",
+      "Check IDA console for: [IDA-MCP] HTTP server started"
+    ]
+  },
+
+  "setup_steps": {
+    "1_build_and_install": [
+      "Run setup.bat",
+      "Choose [1] Build ImGui Client",
+      "Choose [2] Install IDA Plugin"
+    ],
+    "2_choose_mode": [
+      "Standalone Client: Launch exe and enter API key",
+      "Claude Desktop: install_mcp.bat -> option 1",
+      "ChatGPT/Gemini: install_mcp.bat -> option 2",
+      "Other MCP client: Use config from this file"
+    ],
+    "3_start_ida": [
+      "Open IDA Pro",
+      "Press Ctrl+Shift+M to start HTTP server",
+      "Look for confirmation in IDA console"
+    ],
+    "4_connect": [
+      "Standalone: Click 'Connect to IDA' in client",
+      "MCP: Server auto-connects to IDA",
+      "Start analyzing functions!"
+    ]
+  },
+
+  "mcp_tools_available": [
+    "get_function_pseudocode",
+    "get_function_assembly",
+    "get_function_xrefs",
+    "analyze_function",
+    "list_functions",
+    "get_current_function",
+    "rename_function",
+    "add_comment",
+    "get_database_info",
+    "rename_local_variable",
+    "set_variable_type",
+    "add_function_comment",
+    "get_function_local_variables"
+  ],
+
+  "api_keys": {
+    "claude": "Get from https://console.anthropic.com/",
+    "openai": "Get from https://platform.openai.com/api-keys",
+    "gemini": "Get from https://makersuite.google.com/app/apikey",
+    "note": "Only needed for standalone client, not for MCP modes"
+  },
+
+  "troubleshooting": {
+    "cannot_connect_to_ida": [
+      "Make sure IDA is running",
+      "Press Ctrl+Shift+M in IDA",
+      "Check firewall not blocking port 13120",
+      "Look for '[IDA-MCP] HTTP server started' in IDA console"
+    ],
+    "mcp_server_not_working": [
+      "stdio: Check Claude Desktop config path",
+      "SSE: Make sure server is running on port 13121",
+      "Check dependencies: pip install -r mcp-server/requirements_sse.txt"
+    ]
+  }
+}
