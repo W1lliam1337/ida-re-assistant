@@ -160,6 +160,8 @@ namespace ida_re::ui {
         char m_openai_key_buf[ 256 ] { };
         char m_gemini_key_buf[ 256 ] { };
         char m_openrouter_key_buf[ 256 ] { };
+        char m_openai_base_url_buf[ 256 ] { };
+        char m_anthropic_base_url_buf[ 256 ] { };
         char m_openrouter_model_filter[ 128 ] { };
         int  m_openrouter_selected_model { 0 };
         bool m_openrouter_free_only { true };

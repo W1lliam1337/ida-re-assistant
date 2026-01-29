@@ -165,6 +165,11 @@ namespace ida_re::api {
             m_config.m_model = "claude-sonnet-4-5-20250929";
         }
 
+        void set_base_url( std::string_view url ) {
+            const std::lock_guard< std::mutex > lk( m_mutex );
+            m_config.m_base_url = url;
+        }
+
         response_t send( std::string_view message );
         response_t send( const std::vector< message_t > &messages );
         void       stream( std::string_view message, stream_callback_t cb );
@@ -177,9 +182,10 @@ namespace ida_re::api {
         [[nodiscard]] static std::vector< model_t > models( );
 
       private:
-        response_t request( const json_t &body );
-        void       stream_request( const json_t &body, stream_callback_t cb );
-        json_t     make_body( const std::vector< message_t > &msgs, bool stream ) const;
+        response_t  request( const json_t &body );
+        void        stream_request( const json_t &body, stream_callback_t cb );
+        json_t      make_body( const std::vector< message_t > &msgs, bool stream ) const;
+        std::string host( ) const;
     };
 
     // OpenAI

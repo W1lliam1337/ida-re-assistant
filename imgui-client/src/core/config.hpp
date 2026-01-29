@@ -11,6 +11,10 @@ namespace ida_re::core {
         bool        m_openrouter_free_only { true };
         std::string m_model { "gemini-2.0-flash-exp" };
         int         m_max_tokens { 4096 };
+        
+        // Custom API endpoints
+        std::string m_openai_base_url { };     // e.g., "api.openai.com" or custom endpoint
+        std::string m_anthropic_base_url { };  // e.g., "api.anthropic.com" or custom endpoint
 
         // IDA MCP settings
         std::string m_mcp_host { "127.0.0.1" };
@@ -62,6 +66,8 @@ namespace ida_re::core {
                 m_openrouter_free_only = j.value( "openrouter_free_only", true );
                 m_model                = j.value( "model", "gemini-2.0-flash-exp" );
                 m_max_tokens           = j.value( "max_tokens", 4096 );
+                m_openai_base_url      = j.value( "openai_base_url", "" );
+                m_anthropic_base_url   = j.value( "anthropic_base_url", "" );
                 m_mcp_host             = j.value( "mcp_host", "127.0.0.1" );
                 m_mcp_port             = j.value( "mcp_port", 13120 );
                 m_auto_connect         = j.value( "auto_connect", false );
@@ -89,6 +95,8 @@ namespace ida_re::core {
                     { "openrouter_free_only", m_openrouter_free_only },
                     {              "model",              m_model },
                     {         "max_tokens",         m_max_tokens },
+                    {     "openai_base_url",     m_openai_base_url },
+                    {  "anthropic_base_url",  m_anthropic_base_url },
                     {           "mcp_host",           m_mcp_host },
                     {           "mcp_port",           m_mcp_port },
                     {       "auto_connect",       m_auto_connect },

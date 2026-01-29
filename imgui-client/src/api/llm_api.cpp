@@ -14,6 +14,11 @@ namespace ida_re::api {
         };
     }
 
+    std::string c_claude::host( ) const {
+        std::lock_guard< std::mutex > lk( m_mutex );
+        return m_config.m_base_url.empty( ) ? "api.anthropic.com" : m_config.m_base_url;
+    }
+
     json_t c_claude::make_body( const std::vector< message_t > &msgs, bool stream ) const {
         json_t messages        = json_t::array( );
         auto   non_system_msgs = msgs | std::views::filter( []( const auto &m ) {
@@ -72,7 +77,7 @@ namespace ida_re::api {
             return resp;
         }
 
-        httplib::SSLClient client( "api.anthropic.com", 443 );
+        httplib::SSLClient client( host( ), 443 );
         client.set_connection_timeout( 30 );
         client.set_read_timeout( 120 );
 
@@ -137,7 +142,7 @@ namespace ida_re::api {
         if ( cfg.m_api_key.empty( ) || !cb )
             return;
 
-        httplib::SSLClient client( "api.anthropic.com", 443 );
+        httplib::SSLClient client( host( ), 443 );
         client.set_connection_timeout( 30 );
         client.set_read_timeout( 120 );
 

@@ -897,6 +897,8 @@ namespace ida_re::ui {
                 strncpy( m_openai_key_buf, m_config->m_openai_api_key.c_str( ), sizeof( m_openai_key_buf ) - 1 );
                 strncpy( m_gemini_key_buf, m_config->m_gemini_api_key.c_str( ), sizeof( m_gemini_key_buf ) - 1 );
                 strncpy( m_openrouter_key_buf, m_config->m_openrouter_api_key.c_str( ), sizeof( m_openrouter_key_buf ) - 1 );
+                strncpy( m_openai_base_url_buf, m_config->m_openai_base_url.c_str( ), sizeof( m_openai_base_url_buf ) - 1 );
+                strncpy( m_anthropic_base_url_buf, m_config->m_anthropic_base_url.c_str( ), sizeof( m_anthropic_base_url_buf ) - 1 );
                 strncpy( m_mcp_host_buf, m_config->m_mcp_host.c_str( ), sizeof( m_mcp_host_buf ) - 1 );
                 m_mcp_port_buf          = m_config->m_mcp_port;
                 m_openrouter_free_only  = m_config->m_openrouter_free_only;
@@ -1071,6 +1073,39 @@ namespace ida_re::ui {
             }
 
             ImGui::Spacing( );
+            ImGui::Text( "Custom API Endpoints" );
+            ImGui::Separator( );
+            ImGui::TextDisabled( "Leave empty to use default endpoints" );
+
+            ImGui::Text( "OpenAI Base URL:" );
+            ImGui::SetNextItemWidth( -1 );
+            ImGui::InputTextWithHint( "##openai_base_url", "e.g., api.openai.com or your-proxy.com", 
+                                      m_openai_base_url_buf, sizeof( m_openai_base_url_buf ) );
+            ImGui::SameLine( );
+            ImGui::TextDisabled( "(?)" );
+            if ( ImGui::IsItemHovered( ) ) {
+                ImGui::BeginTooltip( );
+                ImGui::Text( "Custom endpoint for OpenAI-compatible APIs" );
+                ImGui::Text( "Examples: api.openai.com, your-proxy.com" );
+                ImGui::Text( "Do not include 'https://' or path" );
+                ImGui::EndTooltip( );
+            }
+
+            ImGui::Text( "Anthropic Base URL:" );
+            ImGui::SetNextItemWidth( -1 );
+            ImGui::InputTextWithHint( "##anthropic_base_url", "e.g., api.anthropic.com or your-proxy.com", 
+                                      m_anthropic_base_url_buf, sizeof( m_anthropic_base_url_buf ) );
+            ImGui::SameLine( );
+            ImGui::TextDisabled( "(?)" );
+            if ( ImGui::IsItemHovered( ) ) {
+                ImGui::BeginTooltip( );
+                ImGui::Text( "Custom endpoint for Anthropic-compatible APIs" );
+                ImGui::Text( "Examples: api.anthropic.com, your-proxy.com" );
+                ImGui::Text( "Do not include 'https://' or path" );
+                ImGui::EndTooltip( );
+            }
+
+            ImGui::Spacing( );
             ImGui::Text( "MCP Connection" );
             ImGui::Separator( );
 
@@ -1131,6 +1166,8 @@ namespace ida_re::ui {
                     m_config->m_openai_api_key     = m_openai_key_buf;
                     m_config->m_gemini_api_key     = m_gemini_key_buf;
                     m_config->m_openrouter_api_key = m_openrouter_key_buf;
+                    m_config->m_openai_base_url    = m_openai_base_url_buf;
+                    m_config->m_anthropic_base_url = m_anthropic_base_url_buf;
                     m_config->m_mcp_host           = m_mcp_host_buf;
                     m_config->m_mcp_port           = m_mcp_port_buf;
 
@@ -1158,6 +1195,8 @@ namespace ida_re::ui {
                     m_config->m_openai_api_key     = "";
                     m_config->m_gemini_api_key     = "";
                     m_config->m_openrouter_api_key = "";
+                    m_config->m_openai_base_url    = "";
+                    m_config->m_anthropic_base_url = "";
                     m_selected_provider            = 2;
                     m_settings_initialized         = false;
                 }
@@ -1293,10 +1332,16 @@ namespace ida_re::ui {
             provider = api::e_provider::claude;
             m_llm->claude( ).set_api_key( m_config->m_claude_api_key );
             m_llm->claude( ).set_model( m_config->m_model );
+            if ( !m_config->m_anthropic_base_url.empty( ) ) {
+                m_llm->claude( ).set_base_url( m_config->m_anthropic_base_url );
+            }
         } else if ( m_config->m_provider == "openai" ) {
             provider = api::e_provider::openai;
             m_llm->openai( ).set_api_key( m_config->m_openai_api_key );
             m_llm->openai( ).set_model( m_config->m_model );
+            if ( !m_config->m_openai_base_url.empty( ) ) {
+                m_llm->openai( ).set_base_url( m_config->m_openai_base_url );
+            }
         } else if ( m_config->m_provider == "gemini" ) {
             provider = api::e_provider::gemini;
             m_llm->gemini( ).set_api_key( m_config->m_gemini_api_key );
