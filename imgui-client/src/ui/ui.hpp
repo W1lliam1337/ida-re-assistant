@@ -164,6 +164,8 @@ namespace ida_re::ui {
         int  m_openrouter_selected_model { 0 };
         bool m_openrouter_free_only { true };
         bool m_openrouter_models_fetched { false };
+        char m_openai_base_url_buf[ 256 ] { };
+        char m_anthropic_base_url_buf[ 256 ] { };
         char m_mcp_host_buf[ 64 ] { "127.0.0.1" };
         int  m_mcp_port_buf { 13120 };
         bool m_settings_initialized { false };

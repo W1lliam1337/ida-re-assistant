@@ -61,6 +61,38 @@ namespace ida_re::api {
         stream_request( make_body( messages, true ), cb );
     }
 
+    std::string c_claude::sanitize_host( std::string_view base_url ) const {
+        if ( base_url.empty( ) )
+            return "api.anthropic.com";
+
+        std::string url( base_url );
+
+        // Trim whitespace
+        auto start = url.find_first_not_of( " \t\r\n" );
+        auto end   = url.find_last_not_of( " \t\r\n" );
+        if ( start == std::string::npos )
+            return "api.anthropic.com";
+        url = url.substr( start, end - start + 1 );
+
+        // Remove https:// or http:// prefix
+        if ( url.starts_with( "https://" ) )
+            url = url.substr( 8 );
+        else if ( url.starts_with( "http://" ) )
+            url = url.substr( 7 );
+
+        // Remove path (everything after first /)
+        auto slash_pos = url.find( '/' );
+        if ( slash_pos != std::string::npos )
+            url = url.substr( 0, slash_pos );
+
+        // Remove trailing whitespace again
+        end = url.find_last_not_of( " \t\r\n" );
+        if ( end != std::string::npos )
+            url = url.substr( 0, end + 1 );
+
+        return url.empty( ) ? "api.anthropic.com" : url;
+    }
+
     response_t c_claude::request( const json_t &body ) {
         guard_t    guard( m_busy, m_cancel );
         response_t resp;
@@ -72,7 +104,8 @@ namespace ida_re::api {
             return resp;
         }
 
-        httplib::SSLClient client( "api.anthropic.com", 443 );
+        std::string host = sanitize_host( cfg.m_base_url );
+        httplib::SSLClient client( host, 443 );
         client.set_connection_timeout( 30 );
         client.set_read_timeout( 120 );
 
@@ -137,7 +170,8 @@ namespace ida_re::api {
         if ( cfg.m_api_key.empty( ) || !cb )
             return;
 
-        httplib::SSLClient client( "api.anthropic.com", 443 );
+        std::string host = sanitize_host( cfg.m_base_url );
+        httplib::SSLClient client( host, 443 );
         client.set_connection_timeout( 30 );
         client.set_read_timeout( 120 );
 
@@ -194,9 +228,36 @@ namespace ida_re::api {
         };
     }
 
-    std::string c_openai::host( ) const {
-        std::lock_guard< std::mutex > lk( m_mutex );
-        return m_config.m_base_url.empty( ) ? "api.openai.com" : m_config.m_base_url;
+    std::string c_openai::sanitize_host( std::string_view base_url ) const {
+        if ( base_url.empty( ) )
+            return "api.openai.com";
+
+        std::string url( base_url );
+
+        // Trim whitespace
+        auto start = url.find_first_not_of( " \t\r\n" );
+        auto end   = url.find_last_not_of( " \t\r\n" );
+        if ( start == std::string::npos )
+            return "api.openai.com";
+        url = url.substr( start, end - start + 1 );
+
+        // Remove https:// or http:// prefix
+        if ( url.starts_with( "https://" ) )
+            url = url.substr( 8 );
+        else if ( url.starts_with( "http://" ) )
+            url = url.substr( 7 );
+
+        // Remove path (everything after first /)
+        auto slash_pos = url.find( '/' );
+        if ( slash_pos != std::string::npos )
+            url = url.substr( 0, slash_pos );
+
+        // Remove trailing whitespace again
+        end = url.find_last_not_of( " \t\r\n" );
+        if ( end != std::string::npos )
+            url = url.substr( 0, end + 1 );
+
+        return url.empty( ) ? "api.openai.com" : url;
     }
 
     json_t c_openai::make_body( const std::vector< message_t > &msgs, bool stream ) const {
@@ -258,7 +319,8 @@ namespace ida_re::api {
             return resp;
         }
 
-        httplib::SSLClient client( host( ), 443 );
+        std::string host = sanitize_host( cfg.m_base_url );
+        httplib::SSLClient client( host, 443 );
         client.set_connection_timeout( 30 );
         client.set_read_timeout( 120 );
 
@@ -321,7 +383,8 @@ namespace ida_re::api {
         if ( cfg.m_api_key.empty( ) || !cb )
             return;
 
-        httplib::SSLClient client( host( ), 443 );
+        std::string host = sanitize_host( cfg.m_base_url );
+        httplib::SSLClient client( host, 443 );
         client.set_connection_timeout( 30 );
         client.set_read_timeout( 120 );
 
