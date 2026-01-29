@@ -110,6 +110,8 @@ namespace ida_re::ui {
         void        render_diff_viewer_window( );
         void        render_ai_log_window( );
         void        render_plugin_installer_window( );
+        void        render_memory_search_window( );
+        void        search_analysis_memory( );
         void        export_history_markdown( std::string_view path );
         void        export_history_html( std::string_view path );
         void        rename_function_in_ida( std::string_view new_name );
@@ -247,6 +249,23 @@ namespace ida_re::ui {
         int                                     m_selected_ida { -1 };
         std::string                             m_install_status { };
         bool                                    m_install_success { false };
+
+        // Memory search
+        struct memory_search_result_t {
+            std::string m_file_md5 { };
+            std::string m_file_name { };
+            std::string m_address { };
+            std::string m_function_name { };
+            std::string m_analysis_type { };
+            std::string m_content { };
+            int         m_relevance { 0 }; // search relevance score
+        };
+
+        bool                                  m_show_memory_search { false };
+        char                                  m_memory_search_query[ 256 ] { };
+        std::vector< memory_search_result_t > m_memory_search_results { };
+        int                                   m_selected_memory_result { -1 };
+        std::atomic< bool >                   m_memory_searching { false };
     };
 
 } // namespace ida_re::ui

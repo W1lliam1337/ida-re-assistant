@@ -132,6 +132,8 @@ namespace ida_re::ui {
             render_settings_window( );
         if ( m_show_history )
             render_history_window( );
+        if ( m_show_memory_search )
+            render_memory_search_window( );
         if ( m_show_bookmarks )
             render_bookmarks_window( );
         if ( m_show_custom_prompts )
@@ -167,6 +169,9 @@ namespace ida_re::ui {
             if ( ImGui::BeginMenu( "View" ) ) {
                 if ( ImGui::MenuItem( "Analysis History", "Ctrl+H" ) ) {
                     m_show_history = !m_show_history;
+                }
+                if ( ImGui::MenuItem( "Memory Search", "Ctrl+M" ) ) {
+                    m_show_memory_search = !m_show_memory_search;
                 }
                 if ( ImGui::MenuItem( "Bookmarks", "Ctrl+B" ) ) {
                     m_show_bookmarks = !m_show_bookmarks;
@@ -227,6 +232,8 @@ namespace ida_re::ui {
         const auto &io = ImGui::GetIO( );
         if ( io.KeyCtrl && ImGui::IsKeyPressed( ImGuiKey_H ) )
             m_show_history = !m_show_history;
+        if ( io.KeyCtrl && ImGui::IsKeyPressed( ImGuiKey_M ) )
+            m_show_memory_search = !m_show_memory_search;
         if ( io.KeyCtrl && ImGui::IsKeyPressed( ImGuiKey_B ) )
             m_show_bookmarks = !m_show_bookmarks;
         if ( io.KeyCtrl && ImGui::IsKeyPressed( ImGuiKey_P ) )
@@ -1759,6 +1766,220 @@ namespace ida_re::ui {
                     }
                 }
             }
+        }
+        ImGui::End( );
+    }
+
+    void c_ui::search_analysis_memory( ) {
+        if ( m_memory_searching )
+            return;
+
+        m_memory_searching = true;
+        m_memory_search_results.clear( );
+
+        std::string query_lower = m_memory_search_query;
+        std::transform( query_lower.begin( ), query_lower.end( ), query_lower.begin( ), ::tolower );
+
+        if ( query_lower.empty( ) ) {
+            m_memory_searching = false;
+            return;
+        }
+
+        // Search through all cached analyses
+        for ( const auto &[ file_md5, file_cache ] : m_analysis_cache ) {
+            for ( const auto &[ address, func_cache ] : file_cache ) {
+                for ( const auto &[ analysis_type, content ] : func_cache ) {
+                    std::string content_lower = content;
+                    std::transform( content_lower.begin( ), content_lower.end( ), content_lower.begin( ), ::tolower );
+
+                    // Calculate relevance score
+                    int      relevance = 0;
+                    size_t   pos       = 0;
+                    while ( ( pos = content_lower.find( query_lower, pos ) ) != std::string::npos ) {
+                        relevance++;
+                        pos += query_lower.length( );
+                    }
+
+                    if ( relevance > 0 ) {
+                        memory_search_result_t result;
+                        result.m_file_md5       = file_md5;
+                        result.m_address        = address;
+                        result.m_analysis_type  = analysis_type;
+                        result.m_content        = content;
+                        result.m_relevance      = relevance;
+
+                        // Try to find function name from MCP
+                        if ( m_mcp && !m_current_file_md5.empty( ) && file_md5 == m_current_file_md5 ) {
+                            // Same file - can get function name from MCP potentially
+                            result.m_function_name = address; // Fallback to address
+                        } else {
+                            result.m_function_name = address;
+                        }
+
+                        // Set file name if it's the current file
+                        if ( !m_current_file_name.empty( ) && file_md5 == m_current_file_md5 ) {
+                            result.m_file_name = m_current_file_name;
+                        } else {
+                            result.m_file_name = file_md5.substr( 0, 8 ) + "..."; // Show first 8 chars of MD5
+                        }
+
+                        m_memory_search_results.push_back( result );
+                    }
+                }
+            }
+        }
+
+        // Sort by relevance (highest first)
+        std::sort( m_memory_search_results.begin( ), m_memory_search_results.end( ),
+                   []( const memory_search_result_t &a, const memory_search_result_t &b ) { return a.m_relevance > b.m_relevance; } );
+
+        m_memory_searching = false;
+    }
+
+    void c_ui::render_memory_search_window( ) {
+        ImGui::SetNextWindowSize( ImVec2( 900, 650 ), ImGuiCond_FirstUseEver );
+        if ( ImGui::Begin( "Memory Search - Agent Knowledge Base", &m_show_memory_search ) ) {
+            ImGui::TextColored( ImVec4( 0.7f, 0.8f, 0.9f, 1.0f ), "Search across all analyzed functions in history" );
+            ImGui::Separator( );
+
+            // Search bar
+            ImGui::SetNextItemWidth( 400 );
+            if ( ImGui::InputTextWithHint( "##memory_search", "Search query (keywords, code patterns, etc.)...", m_memory_search_query,
+                                           sizeof( m_memory_search_query ), ImGuiInputTextFlags_EnterReturnsTrue ) ) {
+                search_analysis_memory( );
+            }
+
+            ImGui::SameLine( );
+            if ( ImGui::Button( "Search" ) || ( ImGui::IsKeyPressed( ImGuiKey_Enter ) && ImGui::IsItemFocused( ) ) ) {
+                search_analysis_memory( );
+            }
+
+            ImGui::SameLine( );
+            if ( m_memory_searching ) {
+                ImGui::TextDisabled( "Searching..." );
+            } else {
+                ImGui::Text( "Results: %zu", m_memory_search_results.size( ) );
+            }
+
+            ImGui::SameLine( );
+            if ( ImGui::Button( "Clear Cache" ) ) {
+                if ( ImGui::GetIO( ).KeyCtrl ) {
+                    clear_cache( );
+                    m_memory_search_results.clear( );
+                } else {
+                    ImGui::OpenPopup( "ConfirmClearCache" );
+                }
+            }
+            if ( ImGui::IsItemHovered( ) ) {
+                ImGui::SetTooltip( "Hold Ctrl and click to clear all cached analyses" );
+            }
+
+            // Confirmation popup
+            if ( ImGui::BeginPopupModal( "ConfirmClearCache", nullptr, ImGuiWindowFlags_AlwaysAutoResize ) ) {
+                ImGui::Text( "Clear all cached analyses?" );
+                ImGui::Text( "This will delete all stored function analyses." );
+                ImGui::Separator( );
+
+                if ( ImGui::Button( "Yes, Clear All", ImVec2( 120, 0 ) ) ) {
+                    clear_cache( );
+                    m_memory_search_results.clear( );
+                    ImGui::CloseCurrentPopup( );
+                }
+                ImGui::SameLine( );
+                if ( ImGui::Button( "Cancel", ImVec2( 120, 0 ) ) ) {
+                    ImGui::CloseCurrentPopup( );
+                }
+                ImGui::EndPopup( );
+            }
+
+            ImGui::Separator( );
+
+            // Results list
+            float list_width = 400;
+            ImGui::BeginChild( "##memory_results_list", ImVec2( list_width, 0 ), true );
+
+            if ( m_memory_search_results.empty( ) && !m_memory_searching ) {
+                ImGui::TextDisabled( "No results. Enter a search query and press Enter or click Search." );
+            } else {
+                for ( int i = 0; i < ( int ) m_memory_search_results.size( ); i++ ) {
+                    const auto &result = m_memory_search_results[ i ];
+
+                    char label[ 512 ];
+                    snprintf( label, sizeof( label ), "[%s] %s (%s)###memres_%d", result.m_analysis_type.c_str( ),
+                              result.m_function_name.c_str( ), result.m_file_name.c_str( ), i );
+
+                    bool selected = m_selected_memory_result == i;
+                    if ( ImGui::Selectable( label, selected, 0, ImVec2( 0, 30 ) ) ) {
+                        m_selected_memory_result = i;
+                    }
+
+                    if ( ImGui::IsItemHovered( ) ) {
+                        ImGui::BeginTooltip( );
+                        ImGui::Text( "Relevance: %d matches", result.m_relevance );
+                        ImGui::Text( "File: %s", result.m_file_name.c_str( ) );
+                        ImGui::Text( "Address: %s", result.m_address.c_str( ) );
+                        ImGui::EndTooltip( );
+                    }
+                }
+            }
+
+            ImGui::EndChild( );
+
+            ImGui::SameLine( );
+
+            // Result detail view
+            ImGui::BeginChild( "##memory_result_detail", ImVec2( 0, 0 ), true );
+            if ( m_selected_memory_result >= 0 && m_selected_memory_result < ( int ) m_memory_search_results.size( ) ) {
+                const auto &result = m_memory_search_results[ m_selected_memory_result ];
+
+                // Header
+                ImGui::TextColored( ImVec4( 0.8f, 0.9f, 0.6f, 1.0f ), "Function: %s", result.m_function_name.c_str( ) );
+                ImGui::TextDisabled( "Address: %s", result.m_address.c_str( ) );
+                ImGui::TextDisabled( "File: %s", result.m_file_name.c_str( ) );
+                ImGui::TextDisabled( "Analysis Type: %s", result.m_analysis_type.c_str( ) );
+                ImGui::TextDisabled( "Relevance: %d matches", result.m_relevance );
+
+                ImGui::Separator( );
+
+                // Action buttons
+                bool can_load = !m_current_file_md5.empty( ) && result.m_file_md5 == m_current_file_md5;
+                if ( !can_load ) {
+                    ImGui::PushStyleVar( ImGuiStyleVar_Alpha, 0.5f );
+                }
+
+                if ( ImGui::Button( "Load Function" ) ) {
+                    if ( can_load ) {
+                        strncpy( m_address_input, result.m_address.c_str( ), sizeof( m_address_input ) - 1 );
+                        load_function( result.m_address );
+                    }
+                }
+
+                if ( !can_load ) {
+                    ImGui::PopStyleVar( );
+                    if ( ImGui::IsItemHovered( ) ) {
+                        ImGui::SetTooltip( "This function is from a different file. Load that file in IDA first." );
+                    }
+                }
+
+                ImGui::SameLine( );
+                if ( ImGui::Button( "Copy to Clipboard" ) ) {
+                    ImGui::SetClipboardText( result.m_content.c_str( ) );
+                }
+
+                ImGui::Separator( );
+
+                // Content
+                ImGui::TextColored( ImVec4( 0.7f, 0.8f, 0.9f, 1.0f ), "Analysis Result:" );
+                ImGui::Spacing( );
+
+                ImGui::BeginChild( "##memory_content_scroll", ImVec2( 0, 0 ), false, ImGuiWindowFlags_HorizontalScrollbar );
+                ImGui::TextWrapped( "%s", result.m_content.c_str( ) );
+                ImGui::EndChild( );
+            } else {
+                ImGui::TextDisabled( "Select a result to view details" );
+            }
+
+            ImGui::EndChild( );
         }
         ImGui::End( );
     }
